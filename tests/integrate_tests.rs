@@ -1,4 +1,5 @@
 use nd_interpolate;
+mod test_manager;
 
 extern crate image;
 use image::{GenericImage, GenericImageView, ImageBuffer, RgbImage, Rgb};
@@ -8,6 +9,8 @@ use nd_interpolate::f64_data::linear_2D_grid;
 
 #[test]
 fn linear_image_interpolation() {
+	test_manager::setup();
+	
 	let size = 512;
 	let mut img: RgbImage = ImageBuffer::new(size, size);
 	let mut rand_grid = [[0f64; 3]; 3];

@@ -36,7 +36,7 @@ pub mod f64_data {
 		let yy = y - iy as f64;
 		let iz = f64::floor(z) as usize;
 		let zz = z - iz as f64;
-		local_2x2: [[f64;2];2] = [
+		let local_2x2: [[f64;2];2] = [
 			[
 				linear_1D(z, 0f64, local_2x2x2[0][0][0], 1f64, local_2x2x2[0][0][1]),
 				linear_1D(z, 0f64, local_2x2x2[0][1][0], 1f64, local_2x2x2[0][1][1])
