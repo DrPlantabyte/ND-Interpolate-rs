@@ -18,33 +18,42 @@ pub mod f64_data {
 		return yp1 * w + y0 * (1. - w);
 	}
 
-	pub fn linear_2D_grid(x: f64, y: f64, local_2x2: [[f64;2];2]) -> f64 {
-		let ix = (f64::floor(x) as usize);
+	pub fn linear_2D_grid(x: f64, y: f64, local_2x2: &[[f64;2];2]) -> f64 {
+		let ix = f64::floor(x) as usize;
 		let xx = x - ix as f64;
 		let iy = f64::floor(y) as usize;
 		let yy = y - iy as f64;
 		let y0 = linear_1D(xx, 0f64, local_2x2[0][0], 1f64, local_2x2[1][0]);
 		let yp1 = linear_1D(xx, 0f64, local_2x2[0][1], 1f64, local_2x2[1][1]);
-		return linear_1D(yy, 0f64, y0, 1f64, yp1)
+		return linear_1D(yy, 0f64, y0, 1f64, yp1);
 	}
 
 
-	pub fn linear_3D_grid(x: f64, y: f64, z: f64, local_2x2x2: [[[f64;2];2];2]) -> f64 {
-		let ix = (f64::floor(x) as usize);
+	pub fn linear_3D_grid(x: f64, y: f64, z: f64, local_2x2x2: &[[[f64;2];2];2]) -> f64 {
+		let ix = f64::floor(x) as usize;
 		let xx = x - ix as f64;
 		let iy = f64::floor(y) as usize;
 		let yy = y - iy as f64;
 		let iz = f64::floor(z) as usize;
 		let zz = z - iz as f64;
-		let local_2x2: [[f64;2];2] = [
-			[
-				linear_1D(z, 0f64, local_2x2x2[0][0][0], 1f64, local_2x2x2[0][0][1]),
-				linear_1D(z, 0f64, local_2x2x2[0][1][0], 1f64, local_2x2x2[0][1][1])
-			], [
-				linear_1D(z, 0f64, local_2x2x2[1][0][0], 1f64, local_2x2x2[1][0][1]),
-				linear_1D(z, 0f64, local_2x2x2[1][1][0], 1f64, local_2x2x2[1][1][1])
-			] ];
-		return linear_2D_grid(xx, yy, local_2x2);
+		let zy0 = linear_2D_grid(xx, yy, &local_2x2x2[0]);
+		let zy1 = linear_2D_grid(xx, yy, &local_2x2x2[1]);
+		return linear_1D(zz, 0f64, zy0, 1f64, zy1);
+	}
+
+	pub fn linear_4D_grid(x: f64, y: f64, z: f64, w: f64, local_2x2x2x2: &[[[[f64;2];2];2];2]) ->
+																							   f64 {
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let iy = f64::floor(y) as usize;
+		let yy = y - iy as f64;
+		let iz = f64::floor(z) as usize;
+		let zz = z - iz as f64;
+		let iw = f64::floor(w) as usize;
+		let ww = w - iw as f64;
+		let wy0 = linear_3D_grid(xx, yy, zz,&local_2x2x2x2[0]);
+		let wy1 = linear_3D_grid(xx, yy, zz,&local_2x2x2x2[1]);
+		return linear_1D(ww, 0f64, wy0, 1f64, wy1);
 	}
 
 	#[cfg(test)]

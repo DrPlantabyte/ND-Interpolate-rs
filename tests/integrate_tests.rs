@@ -2,7 +2,7 @@ use nd_interpolate;
 mod test_manager;
 
 extern crate image;
-use image::{GenericImage, GenericImageView, ImageBuffer, RgbImage, Rgb};
+use image::*;
 use rand::prelude::*;
 use nd_interpolate::f64_data::linear_2D_grid;
 
@@ -10,7 +10,7 @@ use nd_interpolate::f64_data::linear_2D_grid;
 #[test]
 fn linear_image_interpolation() {
 	test_manager::setup();
-	
+
 	let size = 512;
 	let mut img: RgbImage = ImageBuffer::new(size, size);
 	let mut rand_grid = [[0f64; 3]; 3];
@@ -28,7 +28,8 @@ fn linear_image_interpolation() {
 			let iy = f64::floor(y) as usize % rand_grid[ix].len();
 			let ixp1 = (ix+1) % rand_grid.len();
 			let iyp1 = (iy+1) % rand_grid[ixp1].len();
-			let v = ((linear_2D_grid(x, y, [[ rand_grid[ix][iy],rand_grid[ix][iyp1] ],[ rand_grid[ixp1][iy],rand_grid[ixp1][iyp1] ]])) * 255f64) as u8;
+			let v = ((linear_2D_grid(x, y, &[[ rand_grid[ix][iy],rand_grid[ix][iyp1] ],[
+				rand_grid[ixp1][iy],rand_grid[ixp1][iyp1] ]])) * 255f64) as u8;
 			let pixel = Rgb([v,v,v]);
 			img.put_pixel(px, py, pixel);
 		}
