@@ -4,8 +4,8 @@ mod test_manager;
 extern crate image;
 use image::*;
 use rand::prelude::*;
-use nd_interpolate::f64_data::linear_2D_grid;
-
+use nd_interpolate::f64_data::*;
+use std::f64::consts::PI;
 
 #[test]
 fn linear_image_interpolation() {
@@ -35,5 +35,53 @@ fn linear_image_interpolation() {
 		}
 	}
 	img.save("linear_image_interpolation.png").unwrap();
-	println!("TODO: integration test")
+}
+
+#[test]
+fn cubic_image_interpolation() {
+	test_manager::setup();
+	println!("tri-cubic interpolation test");
+	let imgsize = 512;
+	let w = 2*imgsize;
+	let h = imgsize;
+	let gridsize = 16;
+	let gridcenter = gridsize / 2;
+	let radius = (gridsize / 2 - 3) as f64;
+	let mut img: RgbImage = ImageBuffer::new(w, h);
+	let mut rand_grid = vec![vec![vec![0f64;gridsize];gridsize];gridsize];
+	for x in 0..rand_grid.len(){
+		for y in 0..rand_grid[x].len(){
+			for z in 0..rand_grid[x][y].len() {
+				let r: f64 = random();
+				rand_grid[x][y][z] = r;
+			}
+		}
+	}
+	for px in 0..w {
+		for py in 0..h {
+			let lon = (px as f64 / w as f64) * (2.0*PI) - PI;
+			let lat = ((h-py) as f64 / h as f64) * PI - 0.5*PI;
+			let coord = [
+				radius * lon.sin() * lat.cos(), // X
+				radius * lat.sin(), // Y
+				radius * lon.cos() * lat.cos(), // Z
+			];
+			let grid_coord: [usize; 3] = [
+				coord[0].floor() as usize + gridcenter,
+				coord[1].floor() as usize + gridcenter,
+				coord[2].floor() as usize + gridcenter
+			];
+			let mut local = [[[0f64;4];4];4];
+			for ix in 0..4{for iy in 0..4{for iz in 0..4{
+				let gx = grid_coord[0];
+				let gy = grid_coord[1];
+				let gz = grid_coord[2];
+				local[ix][iy][iz] = rand_grid[ix+gx-1][iy+gy-1][iz+gz-1];
+			}}}
+			let v = ((cubic_3D_grid(coord, &local)) * 255f64) as u8;
+			let pixel = Rgb([v,v,v]);
+			img.put_pixel(px, py, pixel);
+		}
+	}
+	img.save("3D_cubic_image_interpolation.png").unwrap();
 }
