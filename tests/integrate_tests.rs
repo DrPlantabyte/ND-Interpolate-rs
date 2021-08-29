@@ -20,8 +20,8 @@ fn linear_image_interpolation() {
 			rand_grid[x][y] = r;
 		}
 	}
-	for px in 0..size{
-		for py in 0..size{
+	for py in 0..size{
+		for px in 0..size{
 			let x = rand_grid.len() as f64 * px as f64 / size as f64;
 			let y = rand_grid[0].len() as f64 * py as f64 / size as f64;
 			let ix = f64::floor(x) as usize % rand_grid.len();
@@ -30,6 +30,7 @@ fn linear_image_interpolation() {
 			let iyp1 = (iy+1) % rand_grid[ixp1].len();
 			let v = ((linear_2D_grid(x, y, &[[ rand_grid[ix][iy],rand_grid[ix][iyp1] ],[
 				rand_grid[ixp1][iy],rand_grid[ixp1][iyp1] ]])) * 255f64) as u8;
+			let v = v.max(0).min(255);
 			let pixel = Rgb([v,v,v]);
 			img.put_pixel(px, py, pixel);
 		}
@@ -57,8 +58,8 @@ fn cubic_image_interpolation() {
 			}
 		}
 	}
-	for px in 0..w {
-		for py in 0..h {
+	for py in 0..h {
+		for px in 0..w {
 			let lon = (px as f64 / w as f64) * (2.0*PI) - PI;
 			let lat = ((h-py) as f64 / h as f64) * PI - 0.5*PI;
 			let coord = [
@@ -67,9 +68,9 @@ fn cubic_image_interpolation() {
 				radius * lon.cos() * lat.cos(), // Z
 			];
 			let grid_coord: [usize; 3] = [
-				coord[0].floor() as usize + gridcenter,
-				coord[1].floor() as usize + gridcenter,
-				coord[2].floor() as usize + gridcenter
+				(coord[0].floor() as i32 + gridcenter as i32) as usize,
+				(coord[1].floor() as i32 + gridcenter as i32) as usize,
+				(coord[2].floor() as i32 + gridcenter as i32) as usize
 			];
 			let mut local = [[[0f64;4];4];4];
 			for ix in 0..4{for iy in 0..4{for iz in 0..4{
