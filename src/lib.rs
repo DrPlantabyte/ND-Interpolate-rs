@@ -152,25 +152,159 @@ pub mod f64_data {
 		}
 		return cubic_1D_grid(coord[0], &local4);
 	}
-	/// 256-point tetra-cubic interpolation of a coordinate in a grid of values. This function
-	/// assumes that `coord` is in the middle of the provided grid array, such that
-	/// `floor(coord)` represents index\[1,1,...\] in the grid and `floor(coord)+1` represents
+	
+	/// 256-point hyperdimensional-cubic interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
+	/// in the grid and `floor(coord)+1` represents
 	/// index\[2,2,...\] in the grid
 	/// # Arguments
 	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
 	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
 	/// larger grid)
-	/// * `local_4x4x4x4` - Reference points for cubic interpolation surrounding the coordinate of
+	/// * `local_4x_grid` - Reference points for cubic interpolation surrounding the coordinate of
 	/// interest
 	/// # Returns
 	/// Returns the cubic-spline interpolated value at the provided coordinate
-	pub fn cubic_4D_grid(coord: [f64;4], local_4x4x4x4: &[[[[f64;4];4];4];4]) -> f64{
+	pub fn cubic_4D_grid(coord: [f64;4], local_4x_grid: &[[[[f64;4];4];4];4]) -> f64{
 		let mut local4 = [0f64;4];
 		let subcoord = [coord[1], coord[2], coord[3]];
 		for n in 0..4{
-			local4[n] = cubic_3D_grid(subcoord, &local_4x4x4x4[n]);
+			local4[n] = cubic_3D_grid(subcoord, &local_4x_grid[n]);
 		}
-		return cubic_1D_grid(coord[1], &local4);
+		return cubic_1D_grid(coord[0], &local4);
+	}
+
+	/// 1024-point hyperdimensional-cubic interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[2,2,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_4x_grid` - Reference points for cubic interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the cubic-spline interpolated value at the provided coordinate
+	pub fn cubic_5D_grid(coord: [f64;5], local_4x_grid: &[[[[[f64;4];4];4];4];4]) -> f64{
+		let mut local4 = [0f64;4];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4]];
+		for n in 0..4{
+			local4[n] = cubic_4D_grid(subcoord, &local_4x_grid[n]);
+		}
+		return cubic_1D_grid(coord[0], &local4);
+	}
+
+	/// 4096-point hyperdimensional-cubic interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[2,2,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_4x_grid` - Reference points for cubic interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the cubic-spline interpolated value at the provided coordinate
+	pub fn cubic_6D_grid(coord: [f64;6], local_4x_grid: &[[[[[[f64;4];4];4];4];4];4]) -> f64{
+		let mut local4 = [0f64;4];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5]];
+		for n in 0..4{
+			local4[n] = cubic_5D_grid(subcoord, &local_4x_grid[n]);
+		}
+		return cubic_1D_grid(coord[0], &local4);
+	}
+
+	/// 16,384-point hyperdimensional-cubic interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[2,2,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_4x_grid` - Reference points for cubic interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the cubic-spline interpolated value at the provided coordinate
+	pub fn cubic_7D_grid(coord: [f64;7], local_4x_grid: &[[[[[[[f64;4];4];4];4];4];4];4]) -> f64{
+		let mut local4 = [0f64;4];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6]];
+		for n in 0..4{
+			local4[n] = cubic_6D_grid(subcoord, &local_4x_grid[n]);
+		}
+		return cubic_1D_grid(coord[0], &local4);
+	}
+
+	/// 65,536-point hyperdimensional-cubic interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[2,2,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_4x_grid` - Reference points for cubic interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the cubic-spline interpolated value at the provided coordinate
+	pub fn cubic_8D_grid(coord: [f64;8], local_4x_grid: &[[[[[[[[f64;4];4];4];4];4];4];4];4]) -> f64{
+		let mut local4 = [0f64;4];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7]];
+		for n in 0..4{
+			local4[n] = cubic_7D_grid(subcoord, &local_4x_grid[n]);
+		}
+		return cubic_1D_grid(coord[0], &local4);
+	}
+
+	/// 262,144-point hyperdimensional-cubic interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[2,2,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_4x_grid` - Reference points for cubic interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the cubic-spline interpolated value at the provided coordinate
+	pub fn cubic_9D_grid(coord: [f64;9], local_4x_grid: &[[[[[[[[[f64;4];4];4];4];4];4];4];4];4]) -> f64{
+		let mut local4 = [0f64;4];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7], coord[8]];
+		for n in 0..4{
+			local4[n] = cubic_8D_grid(subcoord, &local_4x_grid[n]);
+		}
+		return cubic_1D_grid(coord[0], &local4);
+	}
+
+	/// 1,048,576-point hyperdimensional-cubic interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[2,2,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_4x_grid` - Reference points for cubic interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the cubic-spline interpolated value at the provided coordinate
+	pub fn cubic_10D_grid(coord: [f64;10], local_4x_grid: &[[[[[[[[[[f64;4];4];4];4];4];4];4];4];4];4]) -> f64{
+		let mut local4 = [0f64;4];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7], coord[8], coord[9]];
+		for n in 0..4{
+			local4[n] = cubic_9D_grid(subcoord, &local_4x_grid[n]);
+		}
+		return cubic_1D_grid(coord[0], &local4);
 	}
 
 
@@ -178,8 +312,18 @@ pub mod f64_data {
 	mod tests {
 		use crate::f64_data;
 		#[test]
-		fn it_works() {
+		fn linear_test_f64() {
 			assert_eq!(f64_data::linear_1D(0.25, 0., 1., 1., 3.), 1.5);
+		}
+		#[test]
+		fn cubic_test_f64() {
+			let a = 0.019; let b = -0.15; let c = 1.0; let d = -13.0;
+			let x = 1.64; let y = a*x*x*x + b*x*x + c*x + d;
+			let local_4 = [d, a + b + c + d, a*8.0 + b*4.0 + c*2.0 + d, a*27.0 + b*9.0 + c*3.0 + d];
+			let yi = f64_data::cubic_1D_grid(x, &local_4);
+			let percent_delta = 100. * ((yi-y)/y).abs();
+			println!("{} ?= {} (% delta = {}%)", yi, y, percent_delta);
+			assert!(percent_delta < 0.1);
 		}
 	}
 }

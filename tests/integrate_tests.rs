@@ -6,6 +6,7 @@ use image::*;
 use rand::prelude::*;
 use nd_interpolate::f64_data::*;
 use std::f64::consts::PI;
+use std::thread;
 
 #[test]
 fn linear_image_interpolation() {
@@ -85,4 +86,46 @@ fn cubic_image_interpolation() {
 		}
 	}
 	img.save("3D_cubic_image_interpolation.png").unwrap();
+}
+
+#[test]
+#[allow(non_snake_case)]
+fn test_10_interpolation(){
+	// 10D is insane, not even going to try to visualize it
+	// instead, we'll use fixed values
+	// if every point in the grid is a function of its distance from the origin,
+	// then the interpolated value should be roughly the same as it's distance function
+
+	// NOTE: standard stack size limit is not large enough to hold a size 4 10D array :-(
+	let builder = thread::Builder::new()
+	.name("big-stack-thread".into())
+	.stack_size(16 * 1024 * 1024); // 16MB of stack space
+	let handler = builder.spawn(|| {
+		// stack-intensive operations
+		let A = 0.011; let B = -0.13; let C = 1.5; let D = -17.0;
+		let target_coord = [1.9, 1.01, 1.8, 1.1, 1.7, 1.2, 1.6, 1.3, 1.5, 1.4];
+		let target_value = cubic(dist_10d(&target_coord), A, B, C, D);
+		let mut grid = [[[[[[[[[[0f64;4];4];4];4];4];4];4];4];4];4];
+		for d0 in 0..4{ for d1 in 0..4{ for d2 in 0..4{ for d3 in 0..4{ for d4 in 0..4{ for d5 in 0..4{ for d6 in 0..4{ for d7 in 0..4{ for d8 in 0..4{ for d9 in 0..4{
+			// OMFG! 10D, you crazy
+			let d = dist_10d(&[d0 as f64, d1 as f64, d2 as f64, d3 as f64, d4 as f64, d5 as f64, d6 as f64, d7 as f64, d8 as f64, d9 as f64]);
+			grid[d0][d1][d2][d3][d4][d5][d6][d7][d8][d9] = cubic(d, A, B, C, D);
+		}}}}}}}}}}
+		let ival = cubic_10D_grid(target_coord, &grid);
+		let percent_delta = f64::abs(target_value - ival);
+		println!("10D target value = {}, interpolated = {}, % delta = {}%", target_value, ival, percent_delta);
+		assert!(percent_delta < 0.1);
+	}).unwrap();
+	handler.join().unwrap(); 
+}
+fn dist_10d(coord: &[f64;10]) -> f64{
+	let mut sqsum = 0f64;
+	for n in 0..coord.len(){
+		sqsum += coord[n] * coord[n];
+	}
+	return f64::sqrt(sqsum);
+}
+#[allow(non_snake_case)]
+fn cubic(x: f64, A: f64, B: f64, C: f64, D: f64) -> f64{
+	return A*x*x*x+B*x*x+C*x+D;
 }
