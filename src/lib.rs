@@ -36,9 +36,11 @@ pub mod f64_data {
 		let xx = x - ix as f64;
 		let iy = f64::floor(y) as usize;
 		let yy = y - iy as f64;
-		let y0 = linear_1D(xx, 0f64, local_2x2[0][0], 1f64, local_2x2[1][0]);
-		let yp1 = linear_1D(xx, 0f64, local_2x2[0][1], 1f64, local_2x2[1][1]);
-		return linear_1D(yy, 0f64, y0, 1f64, yp1);
+		let xy0 = linear_1D(yy, 0f64, local_2x2[0][0], 1f64, local_2x2[0][1]);
+		let xy1 = linear_1D(yy, 0f64, local_2x2[1][0], 1f64, local_2x2[1][1]);
+		let yx0 = linear_1D(xx, 0f64, local_2x2[0][0], 1f64, local_2x2[1][0]);
+		let yx1 = linear_1D(xx, 0f64, local_2x2[0][1], 1f64, local_2x2[1][1]);
+		return 0.5 * (linear_1D(xx, 0f64, xy0, 1f64, xy1) + linear_1D(yy, 0f64, yx0, 1f64, yx1));
 	}
 
 
@@ -56,11 +58,11 @@ pub mod f64_data {
 	/// The interpolated value at (X,Y,Z)
 	///
 	pub fn linear_3D_grid(x: f64, y: f64, z: f64, local_2x2x2: &[[[f64;2];2];2]) -> f64 {
-		let iz = f64::floor(z) as usize;
-		let zz = z - iz as f64;
-		let zy0 = linear_2D_grid(x, y, &local_2x2x2[0]);
-		let zy1 = linear_2D_grid(x, y, &local_2x2x2[1]);
-		return linear_1D(zz, 0f64, zy0, 1f64, zy1);
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let xy0 = linear_2D_grid(y, z, &local_2x2x2[0]);
+		let xy1 = linear_2D_grid(y, z, &local_2x2x2[1]);
+		return linear_1D(xx, 0f64, xy0, 1f64, xy1);
 	}
 	/// sixteen-point X,Y,Z,W tetra-linear interpolation in a grid, using the assumption that
 	/// (X,Y,Z,W) is between the provided reference grid points
@@ -80,11 +82,155 @@ pub mod f64_data {
 	pub fn linear_4D_grid(
 		x: f64, y: f64, z: f64, w: f64, local_2x2x2x2: &[[[[f64;2];2];2];2]
 	) -> f64 {
-		let iw = f64::floor(w) as usize;
-		let ww = w - iw as f64;
-		let wy0 = linear_3D_grid(x, y, z,&local_2x2x2x2[0]);
-		let wy1 = linear_3D_grid(x, y, z,&local_2x2x2x2[1]);
-		return linear_1D(ww, 0f64, wy0, 1f64, wy1);
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let xy0 = linear_3D_grid(y, z, w, &local_2x2x2x2[0]);
+		let xy1 = linear_3D_grid(y, z, w, &local_2x2x2x2[1]);
+		return linear_1D(xx, 0f64, xy0, 1f64, xy1);
+	}
+	
+	/// 32-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_5D_grid(coord: [f64;5], local_2x_grid: &[[[[[f64;2];2];2];2];2]) -> f64{
+		let x = coord[0];
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let mut local2 = [0f64;2];
+		for n in 0..2{
+			local2[n] = linear_4D_grid(coord[1], coord[2], coord[3], coord[4], &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f64, local2[0], 1f64, local2[1]);
+	}
+	/// 64-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_6D_grid(coord: [f64;6], local_2x_grid: &[[[[[[f64;2];2];2];2];2];2]) -> f64{
+		let x = coord[0];
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let mut local2 = [0f64;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5]];
+		for n in 0..2{
+			local2[n] = linear_5D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f64, local2[0], 1f64, local2[1]);
+	}
+	/// 128-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_7D_grid(coord: [f64;7], local_2x_grid: &[[[[[[[f64;2];2];2];2];2];2];2]) -> f64{
+		let x = coord[0];
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let mut local2 = [0f64;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6]];
+		for n in 0..2{
+			local2[n] = linear_6D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f64, local2[0], 1f64, local2[1]);
+	}
+	/// 256-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_8D_grid(coord: [f64;8], local_2x_grid: &[[[[[[[[f64;2];2];2];2];2];2];2];2]) -> f64{
+		let x = coord[0];
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let mut local2 = [0f64;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7]];
+		for n in 0..2{
+			local2[n] = linear_7D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f64, local2[0], 1f64, local2[1]);
+	}
+	/// 512-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_9D_grid(coord: [f64;9], local_2x_grid: &[[[[[[[[[f64;2];2];2];2];2];2];2];2];2]) -> f64{
+		let x = coord[0];
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let mut local2 = [0f64;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7], coord[8]];
+		for n in 0..2{
+			local2[n] = linear_8D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f64, local2[0], 1f64, local2[1]);
+	}
+	/// 1024-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_10D_grid(coord: [f64;10], local_2x_grid: &[[[[[[[[[[f64;2];2];2];2];2];2];2];2];2];2]) -> f64{
+		let x = coord[0];
+		let ix = f64::floor(x) as usize;
+		let xx = x - ix as f64;
+		let mut local2 = [0f64;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7], coord[8], coord[9]];
+		for n in 0..2{
+			local2[n] = linear_9D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f64, local2[0], 1f64, local2[1]);
 	}
 
 
@@ -344,6 +490,12 @@ pub mod f64_data {
 		#[test]
 		fn linear_test_f64() {
 			assert_eq!(f64_data::linear_1D(0.25, 0., 1., 1., 3.), 1.5);
+			// a=numpy.asarray([[0,1],[2,3]])
+			// interpolator = scipy.interpolate.LinearNDInterpolator(
+			//   numpy.asarray([[0,0],[1,0],[0,1],[1,1]]), 
+			//   numpy.asarray([a[0][0], a[1][0], a[0][1], a[1][1]]))
+			// interpolator(0.25, 0.75) => 1.25
+			assert_eq!(f64_data::linear_2D_grid(0.25, 0.75, &[[0.,1.],[2.,3.]]), 1.25);
 		}
 		#[test]
 		fn cubic_test_f64() {
@@ -392,9 +544,11 @@ pub mod f32_data {
 		let xx = x - ix as f32;
 		let iy = f32::floor(y) as usize;
 		let yy = y - iy as f32;
-		let y0 = linear_1D(xx, 0f32, local_2x2[0][0], 1f32, local_2x2[1][0]);
-		let yp1 = linear_1D(xx, 0f32, local_2x2[0][1], 1f32, local_2x2[1][1]);
-		return linear_1D(yy, 0f32, y0, 1f32, yp1);
+		let xy0 = linear_1D(yy, 0f32, local_2x2[0][0], 1f32, local_2x2[0][1]);
+		let xy1 = linear_1D(yy, 0f32, local_2x2[1][0], 1f32, local_2x2[1][1]);
+		let yx0 = linear_1D(xx, 0f32, local_2x2[0][0], 1f32, local_2x2[1][0]);
+		let yx1 = linear_1D(xx, 0f32, local_2x2[0][1], 1f32, local_2x2[1][1]);
+		return 0.5 * (linear_1D(xx, 0f32, xy0, 1f32, xy1) + linear_1D(yy, 0f32, yx0, 1f32, yx1));
 	}
 
 
@@ -412,11 +566,11 @@ pub mod f32_data {
 	/// The interpolated value at (X,Y,Z)
 	///
 	pub fn linear_3D_grid(x: f32, y: f32, z: f32, local_2x2x2: &[[[f32;2];2];2]) -> f32 {
-		let iz = f32::floor(z) as usize;
-		let zz = z - iz as f32;
-		let zy0 = linear_2D_grid(x, y, &local_2x2x2[0]);
-		let zy1 = linear_2D_grid(x, y, &local_2x2x2[1]);
-		return linear_1D(zz, 0f32, zy0, 1f32, zy1);
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let xy0 = linear_2D_grid(y, z, &local_2x2x2[0]);
+		let xy1 = linear_2D_grid(y, z, &local_2x2x2[1]);
+		return linear_1D(xx, 0f32, xy0, 1f32, xy1);
 	}
 	/// sixteen-point X,Y,Z,W tetra-linear interpolation in a grid, using the assumption that
 	/// (X,Y,Z,W) is between the provided reference grid points
@@ -436,11 +590,155 @@ pub mod f32_data {
 	pub fn linear_4D_grid(
 		x: f32, y: f32, z: f32, w: f32, local_2x2x2x2: &[[[[f32;2];2];2];2]
 	) -> f32 {
-		let iw = f32::floor(w) as usize;
-		let ww = w - iw as f32;
-		let wy0 = linear_3D_grid(x, y, z,&local_2x2x2x2[0]);
-		let wy1 = linear_3D_grid(x, y, z,&local_2x2x2x2[1]);
-		return linear_1D(ww, 0f32, wy0, 1f32, wy1);
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let xy0 = linear_3D_grid(y, z, w, &local_2x2x2x2[0]);
+		let xy1 = linear_3D_grid(y, z, w, &local_2x2x2x2[1]);
+		return linear_1D(xx, 0f32, xy0, 1f32, xy1);
+	}
+	
+	/// 32-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_5D_grid(coord: [f32;5], local_2x_grid: &[[[[[f32;2];2];2];2];2]) -> f32{
+		let x = coord[0];
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let mut local2 = [0f32;2];
+		for n in 0..2{
+			local2[n] = linear_4D_grid(coord[1], coord[2], coord[3], coord[4], &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f32, local2[0], 1f32, local2[1]);
+	}
+	/// 64-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_6D_grid(coord: [f32;6], local_2x_grid: &[[[[[[f32;2];2];2];2];2];2]) -> f32{
+		let x = coord[0];
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let mut local2 = [0f32;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5]];
+		for n in 0..2{
+			local2[n] = linear_5D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f32, local2[0], 1f32, local2[1]);
+	}
+	/// 128-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_7D_grid(coord: [f32;7], local_2x_grid: &[[[[[[[f32;2];2];2];2];2];2];2]) -> f32{
+		let x = coord[0];
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let mut local2 = [0f32;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6]];
+		for n in 0..2{
+			local2[n] = linear_6D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f32, local2[0], 1f32, local2[1]);
+	}
+	/// 256-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_8D_grid(coord: [f32;8], local_2x_grid: &[[[[[[[[f32;2];2];2];2];2];2];2];2]) -> f32{
+		let x = coord[0];
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let mut local2 = [0f32;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7]];
+		for n in 0..2{
+			local2[n] = linear_7D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f32, local2[0], 1f32, local2[1]);
+	}
+	/// 512-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_9D_grid(coord: [f32;9], local_2x_grid: &[[[[[[[[[f32;2];2];2];2];2];2];2];2];2]) -> f32{
+		let x = coord[0];
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let mut local2 = [0f32;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7], coord[8]];
+		for n in 0..2{
+			local2[n] = linear_8D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f32, local2[0], 1f32, local2[1]);
+	}
+	/// 1024-point hyperdimensional-linear interpolation of a coordinate in a 
+	/// grid of values. This function assumes that `coord` is in the middle of the 
+	/// provided grid array, such that `floor(coord)` represents index\[0,0,...\] 
+	/// in the grid and `floor(coord)+1` represents
+	/// index\[1,1,...\] in the grid
+	/// # Arguments
+	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
+	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
+	/// larger grid)
+	/// * `local_2x_grid` - Reference points for linear interpolation surrounding the coordinate of
+	/// interest
+	/// # Returns
+	/// Returns the linear interpolated value at the provided coordinate
+	pub fn linear_10D_grid(coord: [f32;10], local_2x_grid: &[[[[[[[[[[f32;2];2];2];2];2];2];2];2];2];2]) -> f32{
+		let x = coord[0];
+		let ix = f32::floor(x) as usize;
+		let xx = x - ix as f32;
+		let mut local2 = [0f32;2];
+		let subcoord = [coord[1], coord[2], coord[3], coord[4], coord[5], coord[6], coord[7], coord[8], coord[9]];
+		for n in 0..2{
+			local2[n] = linear_9D_grid(subcoord, &local_2x_grid[n]);
+		}
+		return linear_1D(xx, 0f32, local2[0], 1f32, local2[1]);
 	}
 
 
