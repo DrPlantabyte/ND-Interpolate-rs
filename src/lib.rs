@@ -268,6 +268,19 @@ pub mod f64_data {
 	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
 	/// in the grid and `floor(coord)+1` represents
 	/// index\[2,2,...\] in the grid
+	/// # WARNING: Large stack memory usage!
+	/// You will need to increase the stack size limit to more than 2 MB to use this function:
+	/// ```
+	/// let builder = thread::Builder::new()
+	///   .name("big-stack-thread".into())
+	///   .stack_size(8 * 1024 * 1024); // 8MB of stack space
+	/// let handler = builder.spawn(|| {
+	///   let mut grid = [[[[[[[[[[0f64;4];4];4];4];4];4];4];4];4];
+	///   let target_coord = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9];
+	///   let interpolated_value = cubic_9D_grid(target_coord, &grid);
+	/// }).unwrap();
+	/// handler.join().unwrap(); 
+	/// ```
 	/// # Arguments
 	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
 	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
@@ -290,6 +303,19 @@ pub mod f64_data {
 	/// provided grid array, such that `floor(coord)` represents index\[1,1,...\] 
 	/// in the grid and `floor(coord)+1` represents
 	/// index\[2,2,...\] in the grid
+	/// # WARNING: Large stack memory usage!
+	/// You will need to increase the stack size limit to more than 8 MB to use this function:
+	/// ```
+	/// let builder = thread::Builder::new()
+	///   .name("big-stack-thread".into())
+	///   .stack_size(16 * 1024 * 1024); // 16MB of stack space
+	/// let handler = builder.spawn(|| {
+	///   let mut grid = [[[[[[[[[[0f64;4];4];4];4];4];4];4];4];4];4];
+	///   let target_coord = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9];
+	///   let interpolated_value = cubic_10D_grid(target_coord, &grid);
+	/// }).unwrap();
+	/// handler.join().unwrap(); 
+	/// ```
 	/// # Arguments
 	/// * `coord` - coordinate position within the grid (each dimension will be normalized with
 	/// `X = X - floor(X)` so that you don't need to correct the position when subsampling from a
