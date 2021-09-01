@@ -2,10 +2,13 @@
 #![warn(missing_docs)]
 //! This crate provides linear and cubic interpolators for up to 4 dimensions
 
+extern crate num_traits;
+
 /// interpolation functions using 64-bit (aka double-precision) floating point numbers
 pub mod f64_data {
 
 	#![allow(non_snake_case)]
+	use num_traits::Float;
 	/// two-point x,y linear interpolation
 	/// # Arguments
 	/// * `x` - x position to interpolate the value at
@@ -16,9 +19,9 @@ pub mod f64_data {
 	/// # Returns
 	/// The interpolated Y value at x
 	///
-	pub fn linear_1D(x: f64, x0: f64, y0: f64, xp1: f64, yp1: f64) -> f64 {
+	pub fn linear_1D<T: Float>(x: T, x0: T, y0: T, xp1: T, yp1: T) -> T {
 		let w = (x-x0) / (xp1-x0);
-		return yp1 * w + y0 * (1. - w);
+		return yp1 * w + y0 * (T::one() - w);
 	}
 	/// four-point X,Y bi-linear interpolation in a grid, using the assumption that x and y are
 	/// between the provided reference grid points
@@ -31,16 +34,16 @@ pub mod f64_data {
 	/// # Returns
 	/// The interpolated value at (X,Y)
 	///
-	pub fn linear_2D_grid(x: f64, y: f64, local_2x2: &[[f64;2];2]) -> f64 {
-		let ix = f64::floor(x) as usize;
-		let xx = x - ix as f64;
-		let iy = f64::floor(y) as usize;
-		let yy = y - iy as f64;
-		let xy0 = linear_1D(yy, 0f64, local_2x2[0][0], 1f64, local_2x2[0][1]);
-		let xy1 = linear_1D(yy, 0f64, local_2x2[1][0], 1f64, local_2x2[1][1]);
-		let yx0 = linear_1D(xx, 0f64, local_2x2[0][0], 1f64, local_2x2[1][0]);
-		let yx1 = linear_1D(xx, 0f64, local_2x2[0][1], 1f64, local_2x2[1][1]);
-		return 0.5 * (linear_1D(xx, 0f64, xy0, 1f64, xy1) + linear_1D(yy, 0f64, yx0, 1f64, yx1));
+	pub fn linear_2D_grid<T: Float>(x: T, y: T, local_2x2: &[[T;2];2]) -> T {
+		let ix = T::floor(x);
+		let xx = x - ix;
+		let iy = T::floor(y);
+		let yy = y - iy;
+		let xy0 = linear_1D(yy, T::zero(), local_2x2[0][0], T::one(), local_2x2[0][1]);
+		let xy1 = linear_1D(yy, T::zero(), local_2x2[1][0], T::one(), local_2x2[1][1]);
+		let yx0 = linear_1D(xx, T::zero(), local_2x2[0][0], T::one(), local_2x2[1][0]);
+		let yx1 = linear_1D(xx, T::zero(), local_2x2[0][1], T::one(), local_2x2[1][1]);
+		return T::from(0.5).unwrap() * (linear_1D(xx, T::zero(), xy0, T::one(), xy1) + linear_1D(yy, T::zero(), yx0, T::one(), yx1));
 	}
 
 
