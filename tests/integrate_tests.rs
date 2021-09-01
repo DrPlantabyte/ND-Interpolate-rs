@@ -4,8 +4,7 @@ mod test_manager;
 extern crate image;
 use image::*;
 use rand::prelude::*;
-use nd_interpolate::f64_data::*;
-use nd_interpolate::f32_data;
+use nd_interpolate::*;
 use std::f64::consts::PI;
 use std::thread;
 
