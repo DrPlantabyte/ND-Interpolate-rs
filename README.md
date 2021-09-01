@@ -6,7 +6,7 @@ This library is particularly useful for Perlin Noise applications.
 # Example
 Here's an example of using 3D cubic interpolation to make a marble-pattern texture for a sphere:
 ```rust
-use nd_interpolate::f64_data::*;
+use nd_interpolate::*;
 use image::*; // image = "0.23.14"
 use rand::prelude::*; // rand = "0.8.4"
 use std::f64::consts::PI;
