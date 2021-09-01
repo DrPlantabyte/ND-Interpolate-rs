@@ -4,8 +4,7 @@ mod test_manager;
 extern crate image;
 use image::*;
 use rand::prelude::*;
-use nd_interpolate::f64_data::*;
-use nd_interpolate::f32_data;
+use nd_interpolate::*;
 use std::f64::consts::PI;
 use std::thread;
 
@@ -116,31 +115,6 @@ fn linfunc(coord: &[f64;10], slope: &[f64;10], offset: &[f64;10]) -> f64{
 	return sum;
 }
 
-#[test]
-#[allow(non_snake_case)]
-fn test_10d_linear_interpolation_f32(){
-	let target_coord = [0.9, 0.01, 0.8, 0.1, 0.7, 0.2, 0.6, 0.3, 0.5, 0.4];
-	let slopes  = [-6.4, -8.5, -1.5, 6.4, 4.1, -1.9, 6.3, 9.6, 4.7, 5.2];
-	let offsets = [8.9, -0.7, 4.1, -6.0, -3.1, -2.1, -7.9, 1.4, 5.0, -4.8];
-	let target_value = linfunc32(&target_coord, &slopes, &offsets);
-	let mut grid = [[[[[[[[[[0f32;2];2];2];2];2];2];2];2];2];2];
-	for d0 in 0..2{ for d1 in 0..2{ for d2 in 0..2{ for d3 in 0..2{ for d4 in 0..2{ for d5 in 0..2{ for d6 in 0..2{ for d7 in 0..2{ for d8 in 0..2{ for d9 in 0..2{
-		// OMFG! 10D, you crazy
-		let v = linfunc32(&[d0 as f32, d1 as f32, d2 as f32, d3 as f32, d4 as f32, d5 as f32, d6 as f32, d7 as f32, d8 as f32, d9 as f32], &slopes, &offsets);
-		grid[d0][d1][d2][d3][d4][d5][d6][d7][d8][d9] = v;
-	}}}}}}}}}}
-	let ival = f32_data::linear_10D_grid(target_coord, &grid);
-	let percent_delta = 100.0 * f32::abs((target_value - ival)/target_value);
-	println!("10D linear target value = {}, interpolated = {}, % delta = {}%", target_value, ival, percent_delta);
-	assert!(percent_delta < 0.1);
-}
-fn linfunc32(coord: &[f32;10], slope: &[f32;10], offset: &[f32;10]) -> f32{
-	let mut sum = 0.;
-	for n in 0..10{
-		sum += coord[n] * slope[n] + offset[n];
-	}
-	return sum;
-}
 
 #[test]
 #[allow(non_snake_case)]
@@ -181,47 +155,5 @@ fn dist_10d(coord: &[f64;10]) -> f64{
 }
 #[allow(non_snake_case)]
 fn cubic(x: f64, A: f64, B: f64, C: f64, D: f64) -> f64{
-	return A*x*x*x+B*x*x+C*x+D;
-}
-
-#[test]
-#[allow(non_snake_case)]
-fn test_10d_cubic_interpolation_f32(){
-	// 10D is insane, not even going to try to visualize it
-	// instead, we'll use fixed values
-	// if every point in the grid is a function of its distance from the origin,
-	// then the interpolated value should be roughly the same as it's distance function
-
-	// NOTE: standard stack size limit is not large enough to hold a size 4 10D array :-(
-	let builder = thread::Builder::new()
-	.name("big-stack-thread".into())
-	.stack_size(16 * 1024 * 1024); // 16MB of stack space
-	let handler = builder.spawn(|| {
-		// stack-intensive operations
-		let A = 0.011; let B = -0.13; let C = 1.5; let D = -17.0;
-		let target_coord = [1.9, 1.01, 1.8, 1.1, 1.7, 1.2, 1.6, 1.3, 1.5, 1.4];
-		let target_value = cubic32(dist_10d_f32(&target_coord), A, B, C, D);
-		let mut grid = [[[[[[[[[[0f32;4];4];4];4];4];4];4];4];4];4];
-		for d0 in 0..4{ for d1 in 0..4{ for d2 in 0..4{ for d3 in 0..4{ for d4 in 0..4{ for d5 in 0..4{ for d6 in 0..4{ for d7 in 0..4{ for d8 in 0..4{ for d9 in 0..4{
-			// OMFG! 10D, you crazy
-			let d = dist_10d_f32(&[d0 as f32, d1 as f32, d2 as f32, d3 as f32, d4 as f32, d5 as f32, d6 as f32, d7 as f32, d8 as f32, d9 as f32]);
-			grid[d0][d1][d2][d3][d4][d5][d6][d7][d8][d9] = cubic32(d, A, B, C, D);
-		}}}}}}}}}}
-		let ival = f32_data::cubic_10D_grid(target_coord, &grid);
-		let percent_delta = 100.0 * f32::abs((target_value - ival)/target_value);
-		println!("10D cubic target value = {}, interpolated = {}, % delta = {}%", target_value, ival, percent_delta);
-		assert!(percent_delta < 0.1);
-	}).unwrap();
-	handler.join().unwrap(); 
-}
-fn dist_10d_f32(coord: &[f32;10]) -> f32{
-	let mut sqsum = 0f32;
-	for n in 0..coord.len(){
-		sqsum += coord[n] * coord[n];
-	}
-	return f32::sqrt(sqsum);
-}
-#[allow(non_snake_case)]
-fn cubic32(x: f32, A: f32, B: f32, C: f32, D: f32) -> f32{
 	return A*x*x*x+B*x*x+C*x+D;
 }
