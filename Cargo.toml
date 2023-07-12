@@ -1,6 +1,6 @@
 [package]
 name = "nd_interpolate"
-version = "2.0.2"
+version = "3.0.0"
 edition = "2018"
 license = "MIT"
 description = "1-10 dimensional linear and cubic spline interpolation implemented in Rust"
@@ -9,12 +9,12 @@ homepage = "https://github.com/DrPlantabyte/ND-Interpolate-rs"
 readme = "README.md"
 documentation = "https://docs.rs/nd_interpolate/"
 keywords = ["interpolation", "spline", "cubic", "linear"]
-categories = ["mathematics", "simulation"] # see https://crates.io/category_slugs
+categories = ["mathematics", "simulation", "no-std", "no-std::no-alloc"] # see https://crates.io/category_slugs
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-num-traits = "0.2.14"
+# none
 
 [dev-dependencies]
 image = "0.23.14"

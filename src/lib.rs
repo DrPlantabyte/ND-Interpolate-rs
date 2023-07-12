@@ -3,8 +3,6 @@
 #![allow(non_snake_case)]
 //! This crate provides linear and cubic interpolators for up to 4 dimensions
 
-use num_traits::Float;
-extern crate num_traits;
 
 /// two-point x,y linear interpolation
 /// # Arguments
@@ -16,7 +14,9 @@ extern crate num_traits;
 /// # Returns
 /// The interpolated Y value at x
 ///
-pub fn linear_1D<T: Float>(x: T, x0: T, y0: T, xp1: T, yp1: T) -> T {
+pub fn linear_1D<T>(x: T, x0: T, y0: T, xp1: T, yp1: T) -> T 
+where T: core::ops::Add<Output=Self> + core::ops::Sub<Output=Self> + core::ops::Mul<Output=Self> + core::ops::Div<Output=Self> + core::marker::Copy + From<i8>
+{
 	let w = (x-x0) / (xp1-x0);
 	return yp1 * w + y0 * (T::one() - w);
 }
